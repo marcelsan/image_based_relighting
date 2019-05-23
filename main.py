@@ -156,7 +156,7 @@ if __name__ == "__main__":
 	for i in range(len(reflectance_field)):
 		out += (reflectance_field[i] * field_weights[i])/alpha
 
-	# Change the background
+	# Change the image background
 	h_out, w_out, _ = out.shape
 	for i in range(h_out):
 		for j in range(w_out):
