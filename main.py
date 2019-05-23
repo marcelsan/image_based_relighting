@@ -119,44 +119,44 @@ def DrawVoronoi(lum, subdiv, directions, light_intensities):
 if __name__ == "__main__":
 	args = parser.parse_args()
 
-	# Load environment map HDR image
+	# load environment map HDR image
 	im = cv2.imread('data/grace_cross.hdr', -1)[..., ::-1]
 
-	# Convert environment map from cube to latitude-longitude mapping 
+	# convert environment map from cube to latitude-longitude mapping 
 	lum = ConvertCubeMap2LL(im, 1024)
 
-	# Read reflectance field
+	# read reflectance field
 	reflectance_field, mask = ReadReflectanceField('data/helmet_front_left', 
 											'data/helmet_front_left_matte.png')
 
-	# Read stage light directions. 
+	# read stage light directions. 
 	intensities = ReadLightIntensities('data/light_intensities.txt')
 
-	# Read stage light directions.
+	# read stage light directions.
 	directions = ReadLightDirections('data/light_directions.txt')
 
-	# Convert light directions from cartesian to spherical coordinates 
+	# convert light directions from cartesian to spherical coordinates 
 	directions = FromCartesianToSphericalCoordinates(directions)
 
-	# Normalize light directions to the environment map
+	# normalize light directions to the environment map
 	h, w, _ = lum.shape
 	xs, ys = NormalizeDirections(directions, w, h)
 
-	# Create an instance of Subdiv2D for drawing Voronoi diagram
+	# create an instance of Subdiv2D for drawing Voronoi diagram
 	subdiv = cv2.Subdiv2D((0, 0, w, h))
 	for x, y in zip(xs, ys):
 		subdiv.insert((x, y ))
 
-	# Draw voronoi diagram
+	# draw voronoi diagram
 	field_weights = DrawVoronoi(lum, subdiv, directions, intensities)
 
-	# Obtain final image
+	# obtain final image
 	alpha = np.sum(field_weights, axis=0).max()
 	out = np.zeros_like(reflectance_field[0])
 	for i in range(len(reflectance_field)):
 		out += (reflectance_field[i] * field_weights[i])/alpha
 
-	# Change the image background
+	# change the image background
 	h_out, w_out, _ = out.shape
 	for i in range(h_out):
 		for j in range(w_out):
@@ -172,5 +172,5 @@ if __name__ == "__main__":
 
 				out[i][j] = lum[v][u]
 
-	# Save images
+	# save images
 	pyexr.write('out/{}.exr'.format(args.file_name), out)
