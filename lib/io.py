@@ -4,6 +4,8 @@ import cv2
 import numpy as np
 import pyexr
 
+from lib.geometry import FromCartesianToSphericalCoordinates
+
 def ReadReflectanceField(folder, mask_path):
 	images = glob.glob(folder + '/*')
 	ret = [pyexr.read_all(file)['default'] for file in images]
@@ -32,3 +34,12 @@ def ReadLightIntensities(file):
 		ret.append(intensity)
 
 	return np.array(ret)
+
+def ReadLightsInfo(intensities_dir, directions_dir):
+	intensities = ReadLightIntensities(intensities_dir)
+	directions = ReadLightDirections(directions_dir)
+
+	# convert light directions from cartesian to spherical coordinates 
+	directions = FromCartesianToSphericalCoordinates(directions)
+
+	return intensities, directions
