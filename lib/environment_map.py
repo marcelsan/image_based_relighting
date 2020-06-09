@@ -2,9 +2,10 @@ import math
 
 import cv2
 import numpy as np
+import scipy.ndimage
 
 def ConvertCubeMap2LL(im, outputSize):
-	h,w,_ = im.shape
+	h, w, _ = im.shape
 
 	minSize = max([h,w])//4
 	halfMinSize = minSize//2
@@ -52,6 +53,33 @@ def ConvertCubeMap2LL(im, outputSize):
 			v_ = int((math.acos(Dy)/math.pi)*halfMinSize) - 1
 			out[v_, u_] = im[y, x]
 
-	ret = cv2.resize(out, (outputSize, outputSize//2), cv2.INTER_CUBIC)
+	return cv2.resize(out, (outputSize, outputSize//2), cv2.INTER_CUBIC)
 
-	return ret
+def ConvertLL2Angular(im):
+	r, c, _ = im.shape
+	maxCoord = max(r, c) / 2
+	r = int(maxCoord)
+	c = 2*int(maxCoord)
+
+	X0, Y0 = np.meshgrid(np.arange(0, c), np.arange(0, r))
+
+	phi =  np.pi * ((X0 / c) * 2 - 1) - np.pi/2
+	theta =  np.pi * (Y0 / r) 
+
+	D = np.zeros((r, c, 3))
+	D[:,:,0] = np.cos(phi) * np.sin(theta)
+	D[:,:,1] = np.cos(theta)
+	D[:,:,2] = np.sin(phi) * np.sin(theta)
+
+	R = (1/np.pi) * np.arccos(D[:,:,2]) / np.sqrt(D[:,:,0]**2 + D[:,:,1]**2)
+	X1 = (R * D[:, :, 0])# * c
+	Y1 = (R * D[:, :, 1])# * r
+
+	print(X1.min(), X1.max())
+	print(Y1.min(), Y1.max())
+
+	imgOut = np.zeros_like(im)
+	for i in range(3):
+		imgOut[:,:,i] = scipy.ndimage.map_coordinates(im[:,:,i], [X1.ravel(), Y1.ravel()]).reshape(r, c)
+
+	return imgOut
